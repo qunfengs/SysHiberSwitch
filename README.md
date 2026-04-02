@@ -1,6 +1,13 @@
 ﻿# SysHiberSwitch
 
-A tiny Windows floating utility that prevents automatic system sleep while enabled, and restores normal power-plan behavior when disabled or exited.
+A tiny Windows floating utility that keeps the machine awake with one simple switch.
+
+When enabled, it prevents both:
+
+- display sleep
+- system sleep
+
+When disabled or exited, Windows returns to the normal power-plan behavior.
 
 ## Build
 
@@ -12,6 +19,6 @@ A tiny Windows floating utility that prevents automatic system sleep while enabl
 
 Start `bin\SysHiberSwitch.exe`, then use the floating panel:
 
-- `开`: enable sleep prevention
-- `关`: restore normal sleep behavior
-- `退`: exit the app
+- `开启`: prevent display sleep and system sleep together
+- `关闭`: restore normal power-plan behavior
+- `退出`: close the app and restore normal behavior

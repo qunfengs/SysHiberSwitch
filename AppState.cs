@@ -8,6 +8,7 @@ namespace SysHiberSwitch
     {
         private const uint ES_CONTINUOUS = 0x80000000;
         private const uint ES_SYSTEM_REQUIRED = 0x00000001;
+        private const uint ES_DISPLAY_REQUIRED = 0x00000002;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern uint SetThreadExecutionState(uint esFlags);
@@ -29,19 +30,25 @@ namespace SysHiberSwitch
 
         public event EventHandler StateChanged;
 
-        public void Enable()
+        public void SetEnabled(bool value)
         {
-            enabled = true;
-            keepAwakeTimer.Start();
-            RefreshExecutionState();
-            OnStateChanged();
-        }
+            if (enabled == value)
+            {
+                return;
+            }
 
-        public void Disable()
-        {
-            enabled = false;
-            keepAwakeTimer.Stop();
-            SetThreadExecutionState(ES_CONTINUOUS);
+            enabled = value;
+
+            if (enabled)
+            {
+                keepAwakeTimer.Start();
+            }
+            else
+            {
+                keepAwakeTimer.Stop();
+            }
+
+            ApplyExecutionState();
             OnStateChanged();
         }
 
@@ -54,12 +61,19 @@ namespace SysHiberSwitch
 
         private void KeepAwakeTimerOnTick(object sender, EventArgs e)
         {
-            RefreshExecutionState();
+            ApplyExecutionState();
         }
 
-        private void RefreshExecutionState()
+        private void ApplyExecutionState()
         {
-            SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+            if (enabled)
+            {
+                SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+            }
+            else
+            {
+                SetThreadExecutionState(ES_CONTINUOUS);
+            }
         }
 
         private void OnStateChanged()

@@ -10,6 +10,7 @@ namespace SysHiberSwitch
         private readonly AppState appState;
         private readonly Label titleLabel;
         private readonly Label statusLabel;
+        private readonly Label hintLabel;
         private readonly Button enableButton;
         private readonly Button disableButton;
         private readonly Button exitButton;
@@ -33,42 +34,34 @@ namespace SysHiberSwitch
             MinimizeBox = false;
             DoubleBuffered = true;
             BackColor = Color.FromArgb(232, 236, 242);
-            Opacity = 0.72D;
-            ClientSize = new Size(244, 72);
+            Opacity = 0.76D;
+            ClientSize = new Size(288, 92);
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Text = "SysHiberSwitch";
 
-            titleLabel = new Label();
-            titleLabel.Text = "\u9632\u4f11\u7720";
-            titleLabel.ForeColor = Color.FromArgb(48, 58, 72);
-            titleLabel.Font = new Font(Font.FontFamily, 9.4F, FontStyle.Bold);
-            titleLabel.AutoSize = true;
-            titleLabel.Location = new Point(16, 11);
+            titleLabel = BuildLabel("\u7535\u6e90\u4fdd\u6301\u5524\u9192", new Point(16, 11), 9.6F, true, new Size(132, 18));
 
             statusDot = new Panel();
             statusDot.Size = new Size(10, 10);
             statusDot.Location = new Point(18, 39);
 
-            statusLabel = new Label();
-            statusLabel.ForeColor = Color.FromArgb(72, 84, 98);
-            statusLabel.Font = new Font(Font.FontFamily, 8.4F, FontStyle.Bold);
-            statusLabel.AutoSize = false;
-            statusLabel.TextAlign = ContentAlignment.MiddleLeft;
-            statusLabel.Location = new Point(34, 33);
-            statusLabel.Size = new Size(70, 18);
+            statusLabel = BuildLabel(string.Empty, new Point(34, 33), 8.7F, true, new Size(110, 18));
+            hintLabel = BuildLabel("\u5f00\u542f\u540e\u540c\u65f6\u963b\u6b62\u606f\u5c4f\u548c\u4f11\u7720", new Point(16, 58), 7.8F, false, new Size(180, 16));
+            hintLabel.ForeColor = Color.FromArgb(102, 114, 128);
 
-            enableButton = BuildButton("\u5f00", new Point(118, 20), Color.FromArgb(46, 160, 67));
+            enableButton = BuildButton("\u5f00\u542f", new Point(184, 18), 42, Color.FromArgb(46, 160, 67));
             enableButton.Click += EnableButtonOnClick;
 
-            disableButton = BuildButton("\u5173", new Point(160, 20), Color.FromArgb(180, 70, 70));
+            disableButton = BuildButton("\u5173\u95ed", new Point(230, 18), 42, Color.FromArgb(212, 84, 84));
             disableButton.Click += DisableButtonOnClick;
 
-            exitButton = BuildButton("\u9000", new Point(202, 20), Color.FromArgb(90, 90, 98));
+            exitButton = BuildButton("\u9000\u51fa", new Point(230, 52), 42, Color.FromArgb(90, 90, 98));
             exitButton.Click += ExitButtonOnClick;
 
             Controls.Add(titleLabel);
             Controls.Add(statusDot);
             Controls.Add(statusLabel);
+            Controls.Add(hintLabel);
             Controls.Add(enableButton);
             Controls.Add(disableButton);
             Controls.Add(exitButton);
@@ -112,18 +105,31 @@ namespace SysHiberSwitch
             }
         }
 
-        private static Button BuildButton(string text, Point location, Color backColor)
+        private static Label BuildLabel(string text, Point location, float fontSize, bool bold, Size size)
+        {
+            var label = new Label();
+            label.Text = text;
+            label.Location = location;
+            label.AutoSize = false;
+            label.Size = size;
+            label.ForeColor = Color.FromArgb(48, 58, 72);
+            label.Font = new Font("Segoe UI", fontSize, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Point, 0);
+            label.TextAlign = ContentAlignment.MiddleLeft;
+            return label;
+        }
+
+        private static Button BuildButton(string text, Point location, int width, Color backColor)
         {
             var button = new Button();
             button.Text = text;
             button.Location = location;
-            button.Size = new Size(32, 32);
+            button.Size = new Size(width, 26);
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
             button.BackColor = backColor;
             button.ForeColor = Color.White;
             button.Cursor = Cursors.Hand;
-            button.Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            button.Font = new Font("Segoe UI", 8.1F, FontStyle.Bold, GraphicsUnit.Point, 0);
             return button;
         }
 
@@ -134,12 +140,12 @@ namespace SysHiberSwitch
 
         private void EnableButtonOnClick(object sender, EventArgs e)
         {
-            appState.Enable();
+            appState.SetEnabled(true);
         }
 
         private void DisableButtonOnClick(object sender, EventArgs e)
         {
-            appState.Disable();
+            appState.SetEnabled(false);
         }
 
         private void ExitButtonOnClick(object sender, EventArgs e)
@@ -151,19 +157,21 @@ namespace SysHiberSwitch
         {
             if (appState.Enabled)
             {
-                statusLabel.Text = "\u5df2\u5f00\u542f";
-                statusLabel.ForeColor = Color.FromArgb(82, 196, 102);
-                statusDot.BackColor = Color.FromArgb(82, 196, 102);
+                statusLabel.Text = "\u5df2\u542f\u7528";
+                statusLabel.ForeColor = Color.FromArgb(46, 160, 67);
+                statusDot.BackColor = Color.FromArgb(46, 160, 67);
                 enableButton.Enabled = false;
                 disableButton.Enabled = true;
+                hintLabel.Text = "\u5df2\u963b\u6b62\u606f\u5c4f\u548c\u4f11\u7720";
             }
             else
             {
                 statusLabel.Text = "\u5df2\u5173\u95ed";
-                statusLabel.ForeColor = Color.FromArgb(255, 120, 117);
-                statusDot.BackColor = Color.FromArgb(255, 120, 117);
+                statusLabel.ForeColor = Color.FromArgb(212, 84, 84);
+                statusDot.BackColor = Color.FromArgb(212, 84, 84);
                 enableButton.Enabled = true;
                 disableButton.Enabled = false;
+                hintLabel.Text = "\u5f53\u524d\u7531\u7cfb\u7edf\u7535\u6e90\u8ba1\u5212\u63a5\u7ba1";
             }
 
             Invalidate();
@@ -199,7 +207,7 @@ namespace SysHiberSwitch
 
         private void FadeIn(object sender, EventArgs e)
         {
-            Opacity = 0.93D;
+            Opacity = 0.94D;
         }
 
         private void FadeOutIfNeeded(object sender, EventArgs e)
@@ -209,7 +217,7 @@ namespace SysHiberSwitch
                 return;
             }
 
-            Opacity = 0.72D;
+            Opacity = 0.76D;
         }
 
         private void OnResizeRefreshRegion(object sender, EventArgs e)

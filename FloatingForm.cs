@@ -1,12 +1,19 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Windows.Forms;
 
 namespace SysHiberSwitch
 {
     internal sealed class FloatingForm : Form
     {
+        private static readonly string StateDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SysHiberSwitch");
+
+        private static readonly string PositionFilePath = Path.Combine(StateDirectory, "window-position.txt");
+
         private readonly AppState appState;
         private readonly Label titleLabel;
         private readonly Label statusLabel;
@@ -27,7 +34,7 @@ namespace SysHiberSwitch
 
             AutoScaleMode = AutoScaleMode.None;
             FormBorderStyle = FormBorderStyle.None;
-            StartPosition = FormStartPosition.CenterScreen;
+            StartPosition = FormStartPosition.Manual;
             TopMost = true;
             ShowInTaskbar = true;
             MaximizeBox = false;
@@ -38,6 +45,8 @@ namespace SysHiberSwitch
             ClientSize = new Size(288, 92);
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Text = "SysHiberSwitch";
+
+            Location = LoadWindowLocation();
 
             titleLabel = BuildLabel("\u7535\u6e90\u4fdd\u6301\u5524\u9192", new Point(16, 11), 9.6F, true, new Size(132, 18));
 
@@ -90,6 +99,13 @@ namespace SysHiberSwitch
         {
             appState.StateChanged -= AppStateOnStateChanged;
             base.OnFormClosed(e);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            SaveWindowLocation();
+            appState.SetEnabled(false);
+            base.OnFormClosing(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -150,6 +166,7 @@ namespace SysHiberSwitch
 
         private void ExitButtonOnClick(object sender, EventArgs e)
         {
+            appState.SetEnabled(false);
             Close();
         }
 
@@ -245,6 +262,72 @@ namespace SysHiberSwitch
             path.CloseFigure();
 
             return path;
+        }
+
+        private Point LoadWindowLocation()
+        {
+            var defaultBounds = Screen.PrimaryScreen.WorkingArea;
+            var defaultLocation = new Point(
+                defaultBounds.Left + (defaultBounds.Width - Width) / 2,
+                defaultBounds.Top + (defaultBounds.Height - Height) / 2);
+
+            try
+            {
+                if (!File.Exists(PositionFilePath))
+                {
+                    return defaultLocation;
+                }
+
+                var content = File.ReadAllText(PositionFilePath).Trim();
+                var parts = content.Split(',');
+                if (parts.Length != 2)
+                {
+                    return defaultLocation;
+                }
+
+                int x;
+                int y;
+                if (!int.TryParse(parts[0], out x) || !int.TryParse(parts[1], out y))
+                {
+                    return defaultLocation;
+                }
+
+                return EnsureVisibleLocation(new Point(x, y), defaultLocation);
+            }
+            catch
+            {
+                return defaultLocation;
+            }
+        }
+
+        private void SaveWindowLocation()
+        {
+            try
+            {
+                Directory.CreateDirectory(StateDirectory);
+                File.WriteAllText(PositionFilePath, Location.X + "," + Location.Y);
+            }
+            catch
+            {
+            }
+        }
+
+        private Point EnsureVisibleLocation(Point location, Point fallback)
+        {
+            var windowBounds = new Rectangle(location, Size);
+
+            foreach (var screen in Screen.AllScreens)
+            {
+                var visibleArea = screen.WorkingArea;
+                if (visibleArea.IntersectsWith(windowBounds))
+                {
+                    var x = Math.Min(Math.Max(location.X, visibleArea.Left), visibleArea.Right - Width);
+                    var y = Math.Min(Math.Max(location.Y, visibleArea.Top), visibleArea.Bottom - Height);
+                    return new Point(x, y);
+                }
+            }
+
+            return fallback;
         }
     }
 }

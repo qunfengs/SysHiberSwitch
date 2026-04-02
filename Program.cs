@@ -13,6 +13,7 @@ namespace SysHiberSwitch
 
             using (var appState = new AppState())
             {
+                appState.SetEnabled(true);
                 Application.Run(new FloatingForm(appState));
             }
         }

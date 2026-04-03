@@ -15,22 +15,43 @@ namespace SysHiberSwitch
         private static readonly string PositionFilePath = Path.Combine(StateDirectory, "window-position.txt");
 
         private readonly AppState appState;
-        private readonly Label titleLabel;
-        private readonly Label statusLabel;
-        private readonly Label hintLabel;
-        private readonly Button enableButton;
-        private readonly Button disableButton;
-        private readonly Button exitButton;
-        private readonly Panel statusDot;
+        private readonly ApplicationIdleMonitor photoshopMonitor;
+        private readonly ApplicationIdleMonitor cinema4DMonitor;
+        private readonly AutoStartManager autoStartManager;
 
+        private readonly Label titleLabel;
+        private readonly Label awakeTitleLabel;
+        private readonly Label awakeValueLabel;
+        private readonly Label photoshopTitleLabel;
+        private readonly Label photoshopValueLabel;
+        private readonly Label cinema4DTitleLabel;
+        private readonly Label cinema4DValueLabel;
+        private readonly Label detailLabel;
+        private readonly CheckBox autoStartCheckBox;
+        private readonly Button exitButton;
+        private readonly Panel awakeDot;
+        private readonly Panel photoshopDot;
+        private readonly Panel cinema4DDot;
+
+        private bool syncingAutoStartCheckBox;
         private bool dragging;
         private Point dragCursorPoint;
         private Point dragFormPoint;
 
-        public FloatingForm(AppState appState)
+        public FloatingForm(
+            AppState appState,
+            ApplicationIdleMonitor photoshopMonitor,
+            ApplicationIdleMonitor cinema4DMonitor,
+            AutoStartManager autoStartManager)
         {
             this.appState = appState;
-            this.appState.StateChanged += AppStateOnStateChanged;
+            this.photoshopMonitor = photoshopMonitor;
+            this.cinema4DMonitor = cinema4DMonitor;
+            this.autoStartManager = autoStartManager;
+
+            this.appState.StateChanged += OnStateChanged;
+            this.photoshopMonitor.StateChanged += OnStateChanged;
+            this.cinema4DMonitor.StateChanged += OnStateChanged;
 
             AutoScaleMode = AutoScaleMode.None;
             FormBorderStyle = FormBorderStyle.None;
@@ -42,37 +63,52 @@ namespace SysHiberSwitch
             DoubleBuffered = true;
             BackColor = Color.FromArgb(232, 236, 242);
             Opacity = 0.76D;
-            ClientSize = new Size(288, 92);
+            ClientSize = new Size(392, 182);
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Text = "SysHiberSwitch";
 
             Location = LoadWindowLocation();
 
-            titleLabel = BuildLabel("\u7535\u6e90\u4fdd\u6301\u5524\u9192", new Point(16, 11), 9.6F, true, new Size(132, 18));
+            titleLabel = BuildLabel("\u9632\u4f11\u7720\u76d1\u6d4b\u5668", new Point(16, 11), 9.6F, true, new Size(160, 18), Color.FromArgb(48, 58, 72));
 
-            statusDot = new Panel();
-            statusDot.Size = new Size(10, 10);
-            statusDot.Location = new Point(18, 39);
+            awakeDot = BuildDot(new Point(18, 42), Color.FromArgb(48, 58, 72));
+            awakeTitleLabel = BuildLabel("\u9632\u4f11\u7720\uff1a", new Point(34, 35), 8.7F, true, new Size(66, 18), Color.FromArgb(48, 58, 72));
+            awakeValueLabel = BuildLabel(string.Empty, new Point(100, 35), 8.7F, true, new Size(88, 18), Color.FromArgb(48, 58, 72));
 
-            statusLabel = BuildLabel(string.Empty, new Point(34, 33), 8.7F, true, new Size(110, 18));
-            hintLabel = BuildLabel("\u5f00\u542f\u540e\u540c\u65f6\u963b\u6b62\u606f\u5c4f\u548c\u4f11\u7720", new Point(16, 58), 7.8F, false, new Size(180, 16));
-            hintLabel.ForeColor = Color.FromArgb(102, 114, 128);
+            photoshopDot = BuildDot(new Point(18, 67), Color.FromArgb(48, 58, 72));
+            photoshopTitleLabel = BuildLabel("Photoshop\uff1a", new Point(34, 60), 8.2F, true, new Size(78, 18), Color.FromArgb(48, 58, 72));
+            photoshopValueLabel = BuildLabel(string.Empty, new Point(112, 60), 8.2F, true, new Size(116, 18), Color.FromArgb(48, 58, 72));
 
-            enableButton = BuildButton("\u5f00\u542f", new Point(184, 18), 42, Color.FromArgb(46, 160, 67));
-            enableButton.Click += EnableButtonOnClick;
+            cinema4DDot = BuildDot(new Point(18, 92), Color.FromArgb(48, 58, 72));
+            cinema4DTitleLabel = BuildLabel("Cinema 4D\uff1a", new Point(34, 85), 8.2F, true, new Size(86, 18), Color.FromArgb(48, 58, 72));
+            cinema4DValueLabel = BuildLabel(string.Empty, new Point(120, 85), 8.2F, true, new Size(116, 18), Color.FromArgb(48, 58, 72));
 
-            disableButton = BuildButton("\u5173\u95ed", new Point(230, 18), 42, Color.FromArgb(212, 84, 84));
-            disableButton.Click += DisableButtonOnClick;
+            detailLabel = BuildLabel(string.Empty, new Point(16, 115), 8F, false, new Size(302, 18), Color.FromArgb(48, 58, 72));
 
-            exitButton = BuildButton("\u9000\u51fa", new Point(230, 52), 42, Color.FromArgb(90, 90, 98));
+            autoStartCheckBox = new CheckBox();
+            autoStartCheckBox.Text = "\u5f00\u673a\u542f\u52a8";
+            autoStartCheckBox.Location = new Point(16, 142);
+            autoStartCheckBox.Size = new Size(96, 20);
+            autoStartCheckBox.FlatStyle = FlatStyle.Flat;
+            autoStartCheckBox.ForeColor = Color.FromArgb(48, 58, 72);
+            autoStartCheckBox.BackColor = Color.Transparent;
+            autoStartCheckBox.CheckedChanged += AutoStartCheckBoxOnCheckedChanged;
+
+            exitButton = BuildButton("\u9000\u51fa", new Point(324, 138), 52, Color.FromArgb(90, 90, 98));
             exitButton.Click += ExitButtonOnClick;
 
             Controls.Add(titleLabel);
-            Controls.Add(statusDot);
-            Controls.Add(statusLabel);
-            Controls.Add(hintLabel);
-            Controls.Add(enableButton);
-            Controls.Add(disableButton);
+            Controls.Add(awakeDot);
+            Controls.Add(awakeTitleLabel);
+            Controls.Add(awakeValueLabel);
+            Controls.Add(photoshopDot);
+            Controls.Add(photoshopTitleLabel);
+            Controls.Add(photoshopValueLabel);
+            Controls.Add(cinema4DDot);
+            Controls.Add(cinema4DTitleLabel);
+            Controls.Add(cinema4DValueLabel);
+            Controls.Add(detailLabel);
+            Controls.Add(autoStartCheckBox);
             Controls.Add(exitButton);
 
             MouseDown += StartDrag;
@@ -91,20 +127,25 @@ namespace SysHiberSwitch
                 control.MouseLeave += FadeOutIfNeeded;
             }
 
+            syncingAutoStartCheckBox = true;
+            autoStartCheckBox.Checked = autoStartManager.GetEnabled();
+            syncingAutoStartCheckBox = false;
+
             UpdateUi();
             UpdateRoundedRegion();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            appState.StateChanged -= AppStateOnStateChanged;
+            appState.StateChanged -= OnStateChanged;
+            photoshopMonitor.StateChanged -= OnStateChanged;
+            cinema4DMonitor.StateChanged -= OnStateChanged;
             base.OnFormClosed(e);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveWindowLocation();
-            appState.SetEnabled(false);
             base.OnFormClosing(e);
         }
 
@@ -121,17 +162,26 @@ namespace SysHiberSwitch
             }
         }
 
-        private static Label BuildLabel(string text, Point location, float fontSize, bool bold, Size size)
+        private static Label BuildLabel(string text, Point location, float fontSize, bool bold, Size size, Color color)
         {
             var label = new Label();
             label.Text = text;
             label.Location = location;
             label.AutoSize = false;
             label.Size = size;
-            label.ForeColor = Color.FromArgb(48, 58, 72);
+            label.ForeColor = color;
             label.Font = new Font("Segoe UI", fontSize, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Point, 0);
             label.TextAlign = ContentAlignment.MiddleLeft;
             return label;
+        }
+
+        private static Panel BuildDot(Point location, Color color)
+        {
+            var dot = new Panel();
+            dot.Size = new Size(10, 10);
+            dot.Location = location;
+            dot.BackColor = color;
+            return dot;
         }
 
         private static Button BuildButton(string text, Point location, int width, Color backColor)
@@ -149,49 +199,98 @@ namespace SysHiberSwitch
             return button;
         }
 
-        private void AppStateOnStateChanged(object sender, EventArgs e)
+        private void OnStateChanged(object sender, EventArgs e)
         {
             UpdateUi();
         }
 
-        private void EnableButtonOnClick(object sender, EventArgs e)
+        private void AutoStartCheckBoxOnCheckedChanged(object sender, EventArgs e)
         {
-            appState.SetEnabled(true);
-        }
+            if (syncingAutoStartCheckBox)
+            {
+                return;
+            }
 
-        private void DisableButtonOnClick(object sender, EventArgs e)
-        {
-            appState.SetEnabled(false);
+            autoStartManager.SetEnabled(autoStartCheckBox.Checked, Application.ExecutablePath);
         }
 
         private void ExitButtonOnClick(object sender, EventArgs e)
         {
-            appState.SetEnabled(false);
             Close();
         }
 
         private void UpdateUi()
         {
-            if (appState.Enabled)
+            awakeDot.BackColor = Color.FromArgb(48, 58, 72);
+            photoshopDot.BackColor = Color.FromArgb(48, 58, 72);
+            cinema4DDot.BackColor = Color.FromArgb(48, 58, 72);
+
+            if (appState.KeepAwakeEnabled)
             {
-                statusLabel.Text = "\u5df2\u542f\u7528";
-                statusLabel.ForeColor = Color.FromArgb(46, 160, 67);
-                statusDot.BackColor = Color.FromArgb(46, 160, 67);
-                enableButton.Enabled = false;
-                disableButton.Enabled = true;
-                hintLabel.Text = "\u5df2\u963b\u6b62\u606f\u5c4f\u548c\u4f11\u7720";
+                awakeValueLabel.Text = "\u5df2\u542f\u7528";
+                awakeValueLabel.ForeColor = Color.FromArgb(46, 160, 67);
             }
             else
             {
-                statusLabel.Text = "\u5df2\u5173\u95ed";
-                statusLabel.ForeColor = Color.FromArgb(212, 84, 84);
-                statusDot.BackColor = Color.FromArgb(212, 84, 84);
-                enableButton.Enabled = true;
-                disableButton.Enabled = false;
-                hintLabel.Text = "\u5f53\u524d\u7531\u7cfb\u7edf\u7535\u6e90\u8ba1\u5212\u63a5\u7ba1";
+                awakeValueLabel.Text = "\u5df2\u5173\u95ed";
+                awakeValueLabel.ForeColor = Color.FromArgb(212, 84, 84);
             }
 
+            ApplyApplicationStatus(photoshopMonitor, photoshopValueLabel);
+            ApplyApplicationStatus(cinema4DMonitor, cinema4DValueLabel);
+            detailLabel.Text = BuildDetailText();
+
             Invalidate();
+        }
+
+        private void ApplyApplicationStatus(ApplicationIdleMonitor monitor, Label valueLabel)
+        {
+            switch (monitor.State)
+            {
+                case ApplicationDetectionState.Active:
+                    valueLabel.Text = "\u6d3b\u52a8\u4e2d";
+                    valueLabel.ForeColor = Color.FromArgb(46, 160, 67);
+                    break;
+                case ApplicationDetectionState.IdleCountdown:
+                    valueLabel.Text = "\u5012\u8ba1\u65f6";
+                    valueLabel.ForeColor = Color.FromArgb(210, 138, 50);
+                    break;
+                case ApplicationDetectionState.IdleExpired:
+                    valueLabel.Text = "\u7a7a\u95f2\u8d85\u65f6";
+                    valueLabel.ForeColor = Color.FromArgb(212, 84, 84);
+                    break;
+                default:
+                    valueLabel.Text = "\u672a\u542f\u52a8";
+                    valueLabel.ForeColor = Color.FromArgb(212, 84, 84);
+                    break;
+            }
+        }
+
+        private string BuildDetailText()
+        {
+            if (photoshopMonitor.State == ApplicationDetectionState.Active || cinema4DMonitor.State == ApplicationDetectionState.Active)
+            {
+                return "\u6709\u8f6f\u4ef6\u6b63\u5728\u5de5\u4f5c\uff0c\u4fdd\u6301\u9632\u4f11\u7720";
+            }
+
+            if (photoshopMonitor.State == ApplicationDetectionState.IdleCountdown || cinema4DMonitor.State == ApplicationDetectionState.IdleCountdown)
+            {
+                var countdown = 0;
+
+                if (photoshopMonitor.State == ApplicationDetectionState.IdleCountdown)
+                {
+                    countdown = Math.Max(countdown, photoshopMonitor.IdleCountdownSecondsRemaining);
+                }
+
+                if (cinema4DMonitor.State == ApplicationDetectionState.IdleCountdown)
+                {
+                    countdown = Math.Max(countdown, cinema4DMonitor.IdleCountdownSecondsRemaining);
+                }
+
+                return "\u7a7a\u95f2\u5012\u8ba1\u65f6\uff1a" + countdown + "\u79d2";
+            }
+
+            return "\u65e0\u4fdd\u62a4\u9700\u6c42\uff0c\u5df2\u5173\u95ed\u9632\u4f11\u7720";
         }
 
         private void StartDrag(object sender, MouseEventArgs e)

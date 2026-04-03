@@ -37,9 +37,15 @@ if ($outputDirectory -and -not (Test-Path $outputDirectory)) {
     /r:System.dll `
     /r:System.Drawing.dll `
     /r:System.Windows.Forms.dll `
+    /r:System.Core.dll `
     "$scriptRoot\Program.cs" `
     "$scriptRoot\AppState.cs" `
+    "$scriptRoot\AutoStartManager.cs" `
+    "$scriptRoot\ApplicationDetectionState.cs" `
+    "$scriptRoot\ApplicationMonitorDefinition.cs" `
+    "$scriptRoot\KeepAwakePolicy.cs" `
     "$scriptRoot\FloatingForm.cs" `
+    "$scriptRoot\ApplicationIdleMonitor.cs" `
     "$scriptRoot\AssemblyInfo.cs"
 
 if ($LASTEXITCODE -ne 0) {

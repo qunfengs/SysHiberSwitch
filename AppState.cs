@@ -14,7 +14,7 @@ namespace SysHiberSwitch
         private static extern uint SetThreadExecutionState(uint esFlags);
 
         private readonly Timer keepAwakeTimer;
-        private bool enabled;
+        private bool keepAwakeEnabled;
 
         public AppState()
         {
@@ -23,23 +23,23 @@ namespace SysHiberSwitch
             keepAwakeTimer.Tick += KeepAwakeTimerOnTick;
         }
 
-        public bool Enabled
+        public bool KeepAwakeEnabled
         {
-            get { return enabled; }
+            get { return keepAwakeEnabled; }
         }
 
         public event EventHandler StateChanged;
 
-        public void SetEnabled(bool value)
+        public void SetKeepAwakeEnabled(bool value)
         {
-            if (enabled == value)
+            if (keepAwakeEnabled == value)
             {
                 return;
             }
 
-            enabled = value;
+            keepAwakeEnabled = value;
 
-            if (enabled)
+            if (keepAwakeEnabled)
             {
                 keepAwakeTimer.Start();
             }
@@ -66,7 +66,7 @@ namespace SysHiberSwitch
 
         private void ApplyExecutionState()
         {
-            if (enabled)
+            if (keepAwakeEnabled)
             {
                 SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
             }

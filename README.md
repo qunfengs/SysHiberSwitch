@@ -33,7 +33,7 @@ Start `bin\SysHiberSwitch.exe`, then use the floating panel to view:
 - current keep-awake status
 - Photoshop status
 - Cinema 4D status
-- idle countdown when protection is about to expire
+- aggregated idle countdown when protection is about to expire
 - auto-start toggle
 - `Exit` button: close the app and restore normal behavior
 

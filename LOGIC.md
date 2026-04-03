@@ -161,7 +161,8 @@ It should:
 - display the current Photoshop status
 - display the current Cinema 4D status
 - display whether keep-awake is currently enabled
-- display the reason in plain language
+- display a plain-language aggregated reason
+- expose the auto-start setting
 
 It should not:
 
@@ -213,7 +214,7 @@ Suggested ownership by component:
   Only apply or clear the Windows execution-state flags.
 
 - `FloatingForm`
-  Only display status and subscribe to state changes.
+  Display aggregated state, show the countdown summary, and handle the auto-start checkbox.
 
 ## Product-Level Summary
 

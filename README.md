@@ -1,13 +1,24 @@
-﻿# SysHiberSwitch
+# SysHiberSwitch
 
-A tiny Windows floating utility that keeps the machine awake with one simple switch.
+A tiny Windows floating utility that automatically keeps the machine awake while monitored creative apps are still active.
 
-When enabled, it prevents both:
+The current app monitors:
+
+- `Photoshop`
+- `Cinema 4D`
+
+The keep-awake rule is:
+
+- if either monitored app is active, keep-awake stays enabled
+- if either monitored app is in the idle countdown stage, keep-awake stays enabled
+- only when both apps are not running or have fully timed out does Windows return to its normal power-plan behavior
+
+When keep-awake is enabled, the app prevents both:
 
 - display sleep
 - system sleep
 
-When disabled or exited, Windows returns to the normal power-plan behavior.
+Cinema 4D uses CPU activity plus GPU Engine utilization to determine whether it is still active. Photoshop currently uses CPU activity only.
 
 ## Build
 
@@ -17,11 +28,16 @@ When disabled or exited, Windows returns to the normal power-plan behavior.
 
 ## Run
 
-Start `bin\SysHiberSwitch.exe`, then use the floating panel:
+Start `bin\SysHiberSwitch.exe`, then use the floating panel to view:
 
-- `开启`: prevent display sleep and system sleep together
-- `关闭`: restore normal power-plan behavior
-- `退出`: close the app and restore normal behavior
+- current keep-awake status
+- Photoshop status
+- Cinema 4D status
+- idle countdown when protection is about to expire
+- auto-start toggle
+- `Exit` button: close the app and restore normal behavior
+
+The app applies keep-awake automatically based on monitored application activity. It is no longer a manual on/off switch.
 
 ## Package
 
